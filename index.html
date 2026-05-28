@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安全・自転車センサーテスト</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
+    #permission-btn, .action-btn { font-size: 20px; padding: 15px 30px; background-color: #007AFF; color: white; border: none; border-radius: 10px; margin: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .btn-reset { background-color: #ff3b30; }
+    .data-box { font-size: 22px; margin: 20px auto; padding: 20px; background-color: white; border-radius: 15px; width: 85%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; }
+    .highlight { font-size: 45px; font-weight: bold; color: #007AFF; display: block; text-align: center; margin: 10px 0; }
+    .danger { color: #ff3b30; }
+    p { font-size: 11px; color: #444; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>安全センサーテスト</h1>
+  <p class="danger">⚠️ 運転中に画面を絶対に見ないでください！</p>
+  <p>ポケットやカゴに入れてテストし、止まってから確認しましょう。</p>
+
+
+  <button id="permission-btn" onclick="requestAccess()">センサーを許可してスタート</button>
+  
+  <div class="data-box" id="data-area" style="display: none;">
+    <button class="action-btn btn-reset" onclick="resetData()">記録をリセット</button>
+    <hr>
+    今の揺れ: <span id="val-total" style="font-weight:bold;">0</span><br>
+    <br>
+    <strong>【走行中】の最大揺れ:</strong>
+    <span id="val-max" class="highlight Danger">0.00</span>
+    
+    <strong>【停止中】の最小揺れ:</strong>
+    <span id="val-min" class="highlight">99.99</span>
+  </div>
+
+  <script>
+    let maxShake = 0;
+    let minShake = 99.99;
+    let lastSpokenTime = 0;
+
+    function resetData() {
+      maxShake = 0;
+      minShake = 99.99;
+      document.getElementById('val-max').innerText = "0.00";
+      document.getElementById('val-min').innerText = "99.99";
+      speak("リセットしました");
+    }
+
+    function requestAccess() {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              startSensor();
+            } else {
+              alert("センサーの利用が拒否されました");
+            }
+          })
+          .catch(console.error);
+      } else {
+        startSensor();
+      }
+    }
+
+    function startSensor() {
+      window.addEventListener('devicemotion', handleMotion);
+      document.getElementById('permission-btn').style.display = 'none';
+      document.getElementById('data-area').style.display = 'block';
+      speak("測定を開始します");
+    }
+
+    function handleMotion(event) {
+      let x = event.acceleration.x || 0;
+      let y = event.acceleration.y || 0;
+      let z = event.acceleration.z || 0;
+
+      let total = Math.sqrt(x * x + y * y + z * z);
+      document.getElementById('val-total').innerText = total.toFixed(2);
+
+      //【走行中】の最大値を記憶（一番激しく揺れた瞬間をキープ）
+      if (total > maxShake) {
+        maxShake = total;
+        document.getElementById('val-max').innerText = maxShake.toFixed(2);
+      }
+
+      //【停止中】の最小値を記憶（一番静かだった瞬間をキープ）
+      // ※最初の動き出しのノイズを防ぐため、少し動いてから判定
+      if (total < minShake && total > 0.01) {
+        minShake = total;
+        document.getElementById('val-min').innerText = minShake.toFixed(2);
+      }
+
+      //【音声読み上げ機能】2秒ごとに今の数字を声で教えてくれる
+      let now = Date.now();
+      if (now - lastSpokenTime > 2000) { 
+        // 小数点第1位までを声で教える（例：「1点5」）
+        speak(total.toFixed(1));
+        lastSpokenTime = now;
+      }
+    }
+
+    //スマホにおしゃべりさせる魔法の関数
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        let utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ja-JP';
+        utterance.rate = 1.2; // 少し早口で
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  </script>
+
+</body>
+</html>
