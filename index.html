@@ -3,56 +3,192 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>安全・自転車センサーテスト</title>
+  <title>安全・自転車センサーテスト 改良版</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
-    #permission-btn, .action-btn { font-size: 20px; padding: 15px 30px; background-color: #007AFF; color: white; border: none; border-radius: 10px; margin: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .btn-reset { background-color: #ff3b30; }
-    .data-box { font-size: 22px; margin: 20px auto; padding: 20px; background-color: white; border-radius: 15px; width: 85%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left; }
-    .highlight { font-size: 45px; font-weight: bold; color: #007AFF; display: block; text-align: center; margin: 10px 0; }
-    .danger { color: #ff3b30; }
-    p { font-size: 11px; color: #444; font-weight: bold; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      font-size: 13px;
+      color: #444;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .danger {
+      color: #ff3b30;
+      font-size: 15px;
+    }
+
+    #permission-btn,
+    .action-btn {
+      font-size: 18px;
+      padding: 14px 24px;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      margin: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #permission-btn {
+      background-color: #007AFF;
+    }
+
+    .btn-run {
+      background-color: #ff9500;
+    }
+
+    .btn-stop {
+      background-color: #2ECC71;
+    }
+
+    .btn-reset {
+      background-color: #ff3b30;
+    }
+
+    .data-box {
+      font-size: 20px;
+      margin: 18px auto;
+      padding: 18px;
+      background-color: white;
+      border-radius: 15px;
+      width: 88%;
+      max-width: 520px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-top: 12px;
+      display: block;
+    }
+
+    .highlight {
+      font-size: 42px;
+      font-weight: bold;
+      color: #007AFF;
+      display: block;
+      text-align: center;
+      margin: 8px 0 12px;
+    }
+
+    .highlight-orange {
+      color: #ff9500;
+    }
+
+    .highlight-green {
+      color: #2ECC71;
+    }
+
+    .highlight-red {
+      color: #ff3b30;
+    }
+
+    .small-text {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .status {
+      text-align: center;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 10px;
+      background: #eef5ff;
+      color: #007AFF;
+      margin-bottom: 12px;
+    }
+
+    .result-box {
+      background: #f7f7f7;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 24px; }
+      .highlight { font-size: 36px; }
+      #permission-btn, .action-btn {
+        font-size: 16px;
+        width: 90%;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <h1>安全センサーテスト</h1>
+  <h1>安全センサーテスト 改良版</h1>
   <p class="danger">⚠️ 運転中に画面を絶対に見ないでください！</p>
   <p>ポケットやカゴに入れてテストし、止まってから確認しましょう。</p>
 
-
   <button id="permission-btn" onclick="requestAccess()">センサーを許可してスタート</button>
-  
+
   <div class="data-box" id="data-area" style="display: none;">
-    <button class="action-btn btn-reset" onclick="resetData()">記録をリセット</button>
+    <div id="status" class="status">測定中</div>
+
+    <span class="label">今の揺れ</span>
+    <span id="val-total" class="highlight">0.00</span>
+
+    <span class="label">直近1秒の平均揺れ</span>
+    <span id="val-average" class="highlight">0.00</span>
+
     <hr>
-    今の揺れ: <span id="val-total" style="font-weight:bold;">0</span><br>
-    <br>
-    <strong>【走行中】の最大揺れ:</strong>
-    <span id="val-max" class="highlight Danger">0.00</span>
-    
-    <strong>【停止中】の最小揺れ:</strong>
-    <span id="val-min" class="highlight">99.99</span>
+
+    <button class="action-btn btn-run" onclick="recordRunning()">走行中の値を記録</button>
+    <button class="action-btn btn-stop" onclick="recordStopped()">停止中の値を記録</button>
+    <button class="action-btn btn-reset" onclick="resetData()">記録をリセット</button>
+
+    <div class="result-box">
+      <strong>【走行中】記録値：</strong>
+      <span id="val-running" style="font-weight:bold; color:#ff9500;">未記録</span><br>
+
+      <strong>【停止中】記録値：</strong>
+      <span id="val-stopped" style="font-weight:bold; color:#2ECC71;">未記録</span><br>
+
+      <strong>おすすめ停止判定ライン：</strong>
+      <span id="val-threshold" style="font-weight:bold; color:#ff3b30;">未計算</span>
+    </div>
+
+    <p class="small-text">
+      ※この改良版では「停止中の最小値」ではなく、直近1秒の平均値を記録します。<br>
+      そのため、停止中の値がどんどん小さくなり続ける問題を防げます。
+    </p>
   </div>
 
   <script>
-    let maxShake = 0;
-    let minShake = 99.99;
     let lastSpokenTime = 0;
 
-    function resetData() {
-      maxShake = 0;
-      minShake = 99.99;
-      document.getElementById('val-max').innerText = "0.00";
-      document.getElementById('val-min').innerText = "99.99";
-      speak("リセットしました");
-    }
+    // 直近1秒分の揺れを保存する配列
+    let recentValues = [];
+
+    // 実験で記録する値
+    let runningValue = null;
+    let stoppedValue = null;
 
     function requestAccess() {
-      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      if (typeof DeviceMotionEvent !== "undefined" &&
+          typeof DeviceMotionEvent.requestPermission === "function") {
         DeviceMotionEvent.requestPermission()
           .then(permissionState => {
-            if (permissionState === 'granted') {
+            if (permissionState === "granted") {
               startSensor();
             } else {
               alert("センサーの利用が拒否されました");
@@ -65,9 +201,11 @@
     }
 
     function startSensor() {
-      window.addEventListener('devicemotion', handleMotion);
-      document.getElementById('permission-btn').style.display = 'none';
-      document.getElementById('data-area').style.display = 'block';
+      window.addEventListener("devicemotion", handleMotion);
+
+      document.getElementById("permission-btn").style.display = "none";
+      document.getElementById("data-area").style.display = "block";
+
       speak("測定を開始します");
     }
 
@@ -76,37 +214,109 @@
       let y = event.acceleration.y || 0;
       let z = event.acceleration.z || 0;
 
+      // 3方向の加速度から、揺れの大きさを計算
       let total = Math.sqrt(x * x + y * y + z * z);
-      document.getElementById('val-total').innerText = total.toFixed(2);
-
-      //【走行中】の最大値を記憶（一番激しく揺れた瞬間をキープ）
-      if (total > maxShake) {
-        maxShake = total;
-        document.getElementById('val-max').innerText = maxShake.toFixed(2);
-      }
-
-      //【停止中】の最小値を記憶（一番静かだった瞬間をキープ）
-      // ※最初の動き出しのノイズを防ぐため、少し動いてから判定
-      if (total < minShake && total > 0.01) {
-        minShake = total;
-        document.getElementById('val-min').innerText = minShake.toFixed(2);
-      }
-
-      //【音声読み上げ機能】2秒ごとに今の数字を声で教えてくれる
       let now = Date.now();
-      if (now - lastSpokenTime > 2000) { 
-        // 小数点第1位までを声で教える（例：「1点5」）
-        speak(total.toFixed(1));
+
+      document.getElementById("val-total").innerText = total.toFixed(2);
+
+      // 直近1秒分だけ保存
+      recentValues.push({ time: now, value: total });
+      recentValues = recentValues.filter(item => now - item.time <= 1000);
+
+      let average = getRecentAverage();
+      document.getElementById("val-average").innerText = average.toFixed(2);
+
+      updateStatus(average);
+
+      // 2秒ごとに直近平均値を読み上げ
+      if (now - lastSpokenTime > 2000) {
+        speak("平均 " + average.toFixed(1));
         lastSpokenTime = now;
       }
     }
 
-    //スマホにおしゃべりさせる魔法の関数
+    function getRecentAverage() {
+      if (recentValues.length === 0) return 0;
+
+      let sum = 0;
+      for (let i = 0; i < recentValues.length; i++) {
+        sum += recentValues[i].value;
+      }
+
+      return sum / recentValues.length;
+    }
+
+    function recordRunning() {
+      runningValue = getRecentAverage();
+      document.getElementById("val-running").innerText = runningValue.toFixed(2);
+      speak("走行中の値を記録しました");
+      calculateThreshold();
+    }
+
+    function recordStopped() {
+      stoppedValue = getRecentAverage();
+      document.getElementById("val-stopped").innerText = stoppedValue.toFixed(2);
+      speak("停止中の値を記録しました");
+      calculateThreshold();
+    }
+
+    function calculateThreshold() {
+      if (runningValue === null || stoppedValue === null) {
+        return;
+      }
+
+      // 走行中と停止中の中間を、停止判定ラインの目安にする
+      let threshold = (runningValue + stoppedValue) / 2;
+      document.getElementById("val-threshold").innerText = threshold.toFixed(2);
+    }
+
+    function resetData() {
+      recentValues = [];
+      runningValue = null;
+      stoppedValue = null;
+
+      document.getElementById("val-total").innerText = "0.00";
+      document.getElementById("val-average").innerText = "0.00";
+      document.getElementById("val-running").innerText = "未記録";
+      document.getElementById("val-stopped").innerText = "未記録";
+      document.getElementById("val-threshold").innerText = "未計算";
+      document.getElementById("status").innerText = "測定中";
+      document.getElementById("status").style.background = "#eef5ff";
+      document.getElementById("status").style.color = "#007AFF";
+
+      speak("リセットしました");
+    }
+
+    function updateStatus(average) {
+      const status = document.getElementById("status");
+
+      if (stoppedValue !== null && runningValue !== null) {
+        const threshold = (runningValue + stoppedValue) / 2;
+
+        if (average < threshold) {
+          status.innerText = "停止に近い状態";
+          status.style.background = "#e6ffed";
+          status.style.color = "#2ECC71";
+        } else {
+          status.innerText = "走行中に近い状態";
+          status.style.background = "#fff3e0";
+          status.style.color = "#ff9500";
+        }
+      } else {
+        status.innerText = "測定中";
+        status.style.background = "#eef5ff";
+        status.style.color = "#007AFF";
+      }
+    }
+
     function speak(text) {
-      if ('speechSynthesis' in window) {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+
         let utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ja-JP';
-        utterance.rate = 1.2; // 少し早口で
+        utterance.lang = "ja-JP";
+        utterance.rate = 1.2;
         window.speechSynthesis.speak(utterance);
       }
     }
